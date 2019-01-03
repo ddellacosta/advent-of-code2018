@@ -18,6 +18,8 @@ import Data.ByteString (ByteString)
 import qualified Data.ByteString as ByteString
 import Data.Text (Text)
 import qualified Data.Text as Text
+import Debug.Trace
+import Data.Foldable
 
 -- You can import from shared modules defined in src/.
 import Lib (someFunc)
@@ -44,7 +46,7 @@ main =
 -- This is an example of just reading in a String from stdin and reversing it.
 -- The reversed String will be output to stdout.
 mySolution :: String -> String
-mySolution inputStr = reverse inputStr
+mySolution inputStr = show $ foldl' (\d n -> d + (read (filter (/= '+') n) :: Int)) 0 $ lines inputStr
 
 -- | This is an example of using doctest.  This is easy to use to test
 -- functions you are working on.  It is much lighter weight than using
