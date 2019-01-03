@@ -20,6 +20,7 @@ import Data.Text (Text)
 import qualified Data.Text as Text
 import Debug.Trace
 import Data.Foldable
+import Data.Monoid
 
 -- You can import from shared modules defined in src/.
 import Lib (someFunc)
@@ -46,7 +47,15 @@ main =
 -- This is an example of just reading in a String from stdin and reversing it.
 -- The reversed String will be output to stdout.
 mySolution :: String -> String
-mySolution inputStr = show $ foldl' (\d n -> d + (read (filter (/= '+') n) :: Int)) 0 $ lines inputStr
+mySolution inputStr = show $ getSum $ foldMap (Sum . toInt) $ lines inputStr
+  where toInt n = (read (filter (/= '+') n) :: Int)
+
+-- First attempt
+-- show $ foldl' (\d n -> d + (read (filter (/= '+') n) :: Int)) 0 $ lines inputStr
+
+testIt :: String -> IO ()
+testIt filename = do s <- readFile filename
+                     putStrLn $ mySolution s
 
 -- | This is an example of using doctest.  This is easy to use to test
 -- functions you are working on.  It is much lighter weight than using
