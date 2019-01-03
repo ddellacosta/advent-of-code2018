@@ -48,7 +48,8 @@ main =
 -- The reversed String will be output to stdout.
 mySolution :: String -> String
 mySolution inputStr = show $ getSum $ foldMap (Sum . toInt) $ lines inputStr
-  where toInt n = (read (filter (/= '+') n) :: Int)
+  where toInt :: String -> Int
+        toInt = read . filter (/= '+')
 
 -- First attempt
 -- show $ foldl' (\d n -> d + (read (filter (/= '+') n) :: Int)) 0 $ lines inputStr
