@@ -95,8 +95,8 @@ claimsWith2orMore = M.foldr (\(c, cms) twoPlus
                                 then S.union cms twoPlus
                                 else twoPlus) S.empty
 
-findIsolatedGridSegments :: String -> ClaimNo
-findIsolatedGridSegments inputStr = head $ S.toList $ S.difference cms1 cms2plus
+findIsolatedGridSegments :: String -> [ClaimNo]
+findIsolatedGridSegments inputStr = S.toList $ S.difference cms1 cms2plus
   where claims = readClaims inputStr
         cms1 = claimsWith1 claims
         cms2plus = claimsWith2orMore claims
@@ -165,5 +165,5 @@ ex4 = "#1 @ 0,0: 5x5\n#2 @ 1,1: 5x5\n#3 @ 2,2: 5x5\n#4 @ 3,3: 5x5\n#5 @ 4,4: 5x5
 
 -- |
 -- >>> findIsolatedGridSegments $ ex4
--- "6"
+-- ["6"]
 --
