@@ -102,14 +102,12 @@ mapToGrid gs grid
   | gs ^. height == 0 = grid
   | otherwise = mapToGrid (gs & yPos %~ succ & height %~ pred) (addRow gs grid)
 
-insertClaim :: (Int, S.Set ClaimNo) -> (Int, S.Set ClaimNo) -> (Int, S.Set ClaimNo)
-insertClaim (_, cms) (cnt, cms') = (succ cnt, S.union cms cms')
-
 addRow :: GridSection -> Grid -> Grid
 addRow gs grid
   | gs ^. width == 0 = grid
   | otherwise = let key = (gs ^. xPos, gs ^. yPos)
                     val = (1, S.singleton (gs ^. claimNo))
+                    insertClaim (_, cms) (cnt, cms') = (succ cnt, S.union cms cms')
                     grid' = M.insertWith insertClaim key val grid
                 in addRow (gs & xPos %~ succ & width %~ pred) grid'
       
