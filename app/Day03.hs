@@ -65,6 +65,9 @@ parseClaim = do
 countClaimOverlaps :: String -> String
 countClaimOverlaps inputStr = show $ countOverlaps $ readClaims inputStr
 
+countOverlaps :: Grid -> Int
+countOverlaps = M.foldr (\(c, _) m -> if (c > 1) then succ m else m) 0
+
 
 -- Calculating the non-overlapping claim using set semantics
 
@@ -113,9 +116,6 @@ addRow gs grid
       
 mapGridSections :: [GridSection] -> Grid -> Grid
 mapGridSections gss grid = foldr mapToGrid grid gss
-
-countOverlaps :: Grid -> Int
-countOverlaps = M.foldr (\(c, _) m -> if (c > 1) then succ m else m) 0
 
 
 -- Examples
