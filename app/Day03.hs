@@ -17,7 +17,7 @@ type ClaimNo = String
 type Grid = M.Map (Int, Int) (Int, S.Set ClaimNo)
 
 data GridSection =
-  GridSection { _claimNo :: String
+  GridSection { _claimNo :: ClaimNo
               , _xPos :: Int
               , _yPos :: Int
               , _width :: Int
