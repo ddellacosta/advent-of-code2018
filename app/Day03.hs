@@ -59,6 +59,18 @@ parseClaim = do
   _ <- eof 
   return $ GridSection cn (read x) (read y) (read w) (read h)
 
+claimsToGridSections :: String -> [GridSection]
+claimsToGridSections = fmap ((fst . head) . readP_to_S parseClaim) . lines
+
+
+-- This ties together reading in the claims and converting them to
+-- GridSections followed by smooshing them all together into a single
+-- Grid, and is used by both Part 1 and Part 2
+
+readClaims :: String -> Grid
+readClaims claims = mapGridSections claims' M.empty
+  where claims' = claimsToGridSections claims
+
 
 -- Calculating the total overlaps from the final calculated Grid
 
@@ -90,16 +102,11 @@ findIsolatedGridSegments inputStr = head $ S.toList $ S.difference cms1 cms2plus
         cms2plus = claimsWith2orMore claims
 
 
--- From here below is all the logic for mapping Claims into
--- GridSections and then into the final Grid.
+-- From here below is all the logic for mapping GridSections into the
+-- single Grid which we can then use to calculate both the >1 overlaps
+-- (Part 1) as well as find the claim which doesn't overlap any other
+-- claims (Part 2).
 
-claimsToGridSections :: String -> [GridSection]
-claimsToGridSections = fmap ((fst . head) . readP_to_S parseClaim) . lines
-
-readClaims :: String -> Grid
-readClaims claims = mapGridSections claims' M.empty
-  where claims' = claimsToGridSections claims
- 
 mapToGrid :: GridSection -> Grid -> Grid
 mapToGrid gs grid
   | gs ^. height == 0 = grid
