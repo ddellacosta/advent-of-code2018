@@ -83,23 +83,17 @@ countOverlaps = M.foldr (\(c, _) m -> if (c > 1) then succ m else m) 0
 
 -- Calculating the non-overlapping claim using set semantics
 
-claimsWith1 :: Grid -> S.Set ClaimNo
-claimsWith1 = M.foldr (\(c, cms) with1 ->
-                         if (c == 1)
-                         then S.union cms with1
-                         else with1) S.empty
-
-claimsWith2orMore :: Grid -> S.Set ClaimNo
-claimsWith2orMore = M.foldr (\(c, cms) twoPlus
-                             -> if (c > 1)
-                                then S.union cms twoPlus
-                                else twoPlus) S.empty
+filterClaims :: (Int -> Bool) -> Grid -> S.Set ClaimNo
+filterClaims pf = M.foldr (\(c, cms) pass ->
+                               if (pf c)
+                               then S.union cms pass
+                               else pass) S.empty
 
 findIsolatedGridSegments :: String -> [ClaimNo]
 findIsolatedGridSegments inputStr = S.toList $ S.difference cms1 cms2plus
   where claims = readClaims inputStr
-        cms1 = claimsWith1 claims
-        cms2plus = claimsWith2orMore claims
+        cms1 = filterClaims (== 1) claims
+        cms2plus = filterClaims (> 1) claims
 
 
 -- From here below is all the logic for mapping GridSections into the
