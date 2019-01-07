@@ -14,24 +14,25 @@ import qualified Data.Set as S
 -- Types
 
 type ClaimNo = String
-type Grid = M.Map (Int, Int) (Int, S.Set ClaimNo)
+type FabricGrid = M.Map (Int, Int) (Int, S.Set ClaimNo)
 
-data GridSection =
-  GridSection { _claimNo :: ClaimNo
-              , _xPos :: Int
-              , _yPos :: Int
-              , _width :: Int
-              , _height :: Int
-              }
+data Claim =
+  Claim { _claimNo :: ClaimNo
+        , _xPos :: Int
+        , _yPos :: Int
+        , _width :: Int
+        , _height :: Int
+        }
   deriving (Show, Eq)
 
-makeLenses ''GridSection
+makeLenses ''Claim
 
 
 -- main + ghci helper
 
 main :: IO ()
-main = interact $ countClaimOverlaps
+main = interact $ (show . countClaimOverlaps . readClaims)
+-- main = interact $ (show . findIsolatedFabricGridSegments . readClaims)
 
 testIt :: (String -> String) -> String -> IO ()
 testIt f filename = do s <- readFile filename
@@ -39,7 +40,7 @@ testIt f filename = do s <- readFile filename
 
 -- Parsing
 
-parseClaim :: ReadP GridSection
+parseClaim :: ReadP Claim
 parseClaim = do
   _ <- char '#'
   cn <- many1 $ satisfy isDigit
@@ -57,56 +58,52 @@ parseClaim = do
   -- if we don't have this it doesn't read all the numbers for height,
   -- not sure why that is...
   _ <- eof 
-  return $ GridSection cn (read x) (read y) (read w) (read h)
+  return $ Claim cn (read x) (read y) (read w) (read h)
 
-claimsToGridSections :: String -> [GridSection]
-claimsToGridSections = fmap ((fst . head) . readP_to_S parseClaim) . lines
+parseClaims :: String -> [Claim]
+parseClaims = fmap ((fst . head) . readP_to_S parseClaim) . lines
 
 
 -- This ties together reading in the claims and converting them to
--- GridSections followed by smooshing them all together into a single
--- Grid, and is used by both Part 1 and Part 2
+-- Claims followed by smooshing them all together into a single
+-- FabricGrid, and is used by both Part 1 and Part 2
 
-readClaims :: String -> Grid
-readClaims claims = mapGridSections claims' M.empty
-  where claims' = claimsToGridSections claims
+readClaims :: String -> FabricGrid
+readClaims claimsStr = mapClaims claims' M.empty
+  where claims' = parseClaims claimsStr
 
 
--- Calculating the total overlaps from the final calculated Grid
+-- Calculating the total overlaps from the final calculated FabricGrid
 
-countClaimOverlaps :: String -> String
-countClaimOverlaps inputStr = show $ countOverlaps $ readClaims inputStr
-
-countOverlaps :: Grid -> Int
-countOverlaps = M.foldr (\(c, _) m -> if (c > 1) then succ m else m) 0
+countClaimOverlaps :: FabricGrid -> Int
+countClaimOverlaps = M.foldr (\(c, _) m -> if (c > 1) then succ m else m) 0
 
 
 -- Calculating the non-overlapping claim using set semantics
 
-filterClaims :: (Int -> Bool) -> Grid -> S.Set ClaimNo
+filterClaims :: (Int -> Bool) -> FabricGrid -> S.Set ClaimNo
 filterClaims pf = M.foldr (\(c, cms) pass ->
                                if (pf c)
                                then S.union cms pass
                                else pass) S.empty
 
-findIsolatedGridSegments :: String -> [ClaimNo]
-findIsolatedGridSegments inputStr = S.toList $ S.difference cms1 cms2plus
-  where claims = readClaims inputStr
-        cms1 = filterClaims (== 1) claims
+findIsolatedFabricGridSegments :: FabricGrid -> [ClaimNo]
+findIsolatedFabricGridSegments claims = S.toList $ S.difference cms1 cms2plus
+  where cms1 = filterClaims (== 1) claims
         cms2plus = filterClaims (> 1) claims
 
 
--- From here below is all the logic for mapping GridSections into the
--- single Grid which we can then use to calculate both the >1 overlaps
+-- From here below is all the logic for mapping Claims into the
+-- single FabricGrid which we can then use to calculate both the >1 overlaps
 -- (Part 1) as well as find the claim which doesn't overlap any other
 -- claims (Part 2).
 
-mapToGrid :: GridSection -> Grid -> Grid
-mapToGrid gs grid
+mapToFabricGrid :: Claim -> FabricGrid -> FabricGrid
+mapToFabricGrid gs grid
   | gs ^. height == 0 = grid
-  | otherwise = mapToGrid (gs & yPos %~ succ & height %~ pred) (addRow gs grid)
+  | otherwise = mapToFabricGrid (gs & yPos %~ succ & height %~ pred) (addRow gs grid)
 
-addRow :: GridSection -> Grid -> Grid
+addRow :: Claim -> FabricGrid -> FabricGrid
 addRow gs grid
   | gs ^. width == 0 = grid
   | otherwise = let key = (gs ^. xPos, gs ^. yPos)
@@ -115,37 +112,37 @@ addRow gs grid
                     grid' = M.insertWith insertClaim key val grid
                 in addRow (gs & xPos %~ succ & width %~ pred) grid'
       
-mapGridSections :: [GridSection] -> Grid -> Grid
-mapGridSections gss grid = foldr mapToGrid grid gss
+mapClaims :: [Claim] -> FabricGrid -> FabricGrid
+mapClaims gss grid = foldr mapToFabricGrid grid gss
 
 
 -- Examples
 
-ex1 :: [GridSection]
-ex1 = [ GridSection "1" 0 0 2 2 
-      , GridSection "2" 2 2 2 2 
+ex1 :: [Claim]
+ex1 = [ Claim "1" 0 0 2 2
+      , Claim "2" 2 2 2 2
       ]
 
 -- |
--- >>> countOverlaps $ mapGridSections ex1 M.empty
+-- >>> countClaimOverlaps $ mapClaims ex1 M.empty
 -- 0
 
-ex2 :: [GridSection]
-ex2 = [ GridSection "1" 0 0 3 3
-      , GridSection "2" 1 1 3 3
+ex2 :: [Claim]
+ex2 = [ Claim "1" 0 0 3 3
+      , Claim "2" 1 1 3 3
       ]
 
 -- |
--- >>> countOverlaps $ mapGridSections ex2 M.empty
+-- >>> countClaimOverlaps $ mapClaims ex2 M.empty
 -- 4
 
-ex3 :: [GridSection]
-ex3 = [ GridSection "1" 2 0 2 2
-      , GridSection "2" 0 1 4 2
+ex3 :: [Claim]
+ex3 = [ Claim "1" 2 0 2 2
+      , Claim "2" 0 1 4 2
       ]
 
 -- |
--- >>> countOverlaps $ mapGridSections ex3 M.empty
+-- >>> countClaimOverlaps $ mapClaims ex3 M.empty
 -- 2 
 --
 
@@ -153,11 +150,11 @@ ex4 :: String
 ex4 = "#1 @ 0,0: 5x5\n#2 @ 1,1: 5x5\n#3 @ 2,2: 5x5\n#4 @ 3,3: 5x5\n#5 @ 4,4: 5x5\n#6 @ 0,10: 5x5"
 
 -- |
--- >>> countOverlaps $ readClaims ex4
+-- >>> countClaimOverlaps $ readClaims ex4
 -- 37
 --
 
 -- |
--- >>> findIsolatedGridSegments $ ex4
+-- >>> findIsolatedFabricGridSegments $ readClaims ex4
 -- ["6"]
 --
